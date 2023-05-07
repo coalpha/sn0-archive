@@ -9,6 +9,7 @@ Comment = Models.Comment
 Redditor = Models.Redditor
 Subreddit = Models.Subreddit
 Submission = Models.Submission
+MoreComments = Models.MoreComments
 CommentForest = Iterable[Comment]
 CommentOrSubmission = Union[Comment, Submission]
 
@@ -27,11 +28,14 @@ ddepth = "   "
 
 conn = db.open()
 def have_redditor(r: Redditor) -> bool:
-   return bool(
-      conn
-         .execute("select exists(select * from redditors where id = ?)", (r.id,))
-         .fetchone()[0]
-   )
+   try:
+      return bool(
+         conn
+            .execute("select exists(select * from redditors where id = ?)", (r.id,))
+            .fetchone()[0]
+      )
+   except Exception:
+      return True
 def add_redditor(r: Redditor):
    conn.execute(
       """
@@ -92,6 +96,12 @@ def have_submission(s: Submission) -> bool:
          .fetchone()[0]
    )
 def add_submission(s: Submission):
+   is_gallery = False
+   try:
+      if s.is_gallery:
+         is_gallery = True
+   except Exception:
+      ...
    conn.execute(
       """
       insert into submissions (
@@ -151,7 +161,7 @@ def add_submission(s: Submission):
          s.created_utc,
          bool(s.distinguished),
          s.edited,
-         bool(s.is_gallery),
+         is_gallery,
          s.is_original_content,
          s.is_self,
          s.link_flair_text,
@@ -184,6 +194,11 @@ def add_comment(c: Comment):
       parent_id = parent_comment.id
    else:
       parent_id = None
+   author_id = None
+   try:
+      author_id = c.author.id
+   except Exception:
+      ...
    conn.execute(
       """
       insert into comments (
@@ -220,7 +235,7 @@ def add_comment(c: Comment):
       """,
       [
          c.id,
-         c.author.id if c.author else None,
+         author_id,
          c.author_flair_text,
          c.created_utc,
          c.body,
@@ -280,37 +295,38 @@ def archive_comment_forest(f: CommentForest, depth: str):
    for c in f:
       archive_comment(c, depth)
 
-def archive_comment(c: Comment, depth: str):
+def archive_comment(c: Union[Comment, MoreComments], depth: str):
    # I assume the submission has already been archived
-   if have_comment(c):
-      print(f"{depth}^ c/{c.id}")
-   else:
-      print(f"{depth}+ c/{c.id}")
+   if isinstance(c, Comment):
+      if have_comment(c):
+         print(f"{depth}^ c/{c.id}")
+      else:
+         print(f"{depth}+ c/{c.id}")
+         depth += ddepth
+         archive_redditor(c.author, depth)
+         try:
+            add_comment(c)
+         except Exception as e:
+            print(f"Couldn't add c/{c.id}!")
+            raise e
+         archive_comment_forest(c.replies, depth)
+
+archive_redditor(me, ddepth)
+
+for item in cast(Iterator[CommentOrSubmission], me.saved()):
+   depth = ddepth
+   if isinstance(item, Comment):
+      print(f"{depth}% c/{item.id}")
       depth += ddepth
-      archive_redditor(c.author, depth)
-      try:
-         add_comment(c)
-      except Exception as e:
-         print(f"Couldn't add c/{c.id}!")
-         raise e
-      archive_comment_forest(c.replies, depth)
+      archive_submission(item.submission, depth)
+   elif isinstance(item, Submission):
+      print(f"{depth}% s/{item.id}")
+      depth += ddepth
+      archive_submission(item, depth)
+   else:
+      print(f"{ddepth}???/{type(item).__name__}")
+   conn.commit()
+   if config.unsave:
+      item.unsave()
 
-# archive_redditor(me, ddepth)
-
-# for item in cast(Iterator[CommentOrSubmission], me.saved()):
-#    depth = ddepth
-#    if isinstance(item, Comment):
-#       print(f"{depth}% c/{item.id}")
-#       depth += ddepth
-#       archive_submission(item.submission, depth)
-#    elif isinstance(item, Submission):
-#       print(f"{depth}% s/{item.id}")
-#       depth += ddepth
-#       archive_submission(item, depth)
-#    else:
-#       print(f"{ddepth}???/{type(item).__name__}")
-#    conn.commit()
-
-# db.close(conn)
-
-print(me_client.submission("139dis1").is_gallery)
+db.close(conn)
