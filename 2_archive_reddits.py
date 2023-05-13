@@ -336,7 +336,7 @@ for item in cast(Iterator[CommentOrSubmission], me.saved()):
       archive_submission(item.submission, depth + ddepth)
       # sometimes archiving the entire submission won't get the comment
       # because of the MoreComments thing
-      archive_comment(item)
+      archive_comment(item, depth + ddepth)
       if unsave:
          item.unsave()
          print(f"{depth}- c/{item.id}")

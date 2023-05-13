@@ -1,5 +1,12 @@
 # sn0-archive
 
+*Reddit archiving scripts*
+
+## requirements
+
+- Python 3.11.3 (for sqlite)
+- [gallery-dl](https://github.com/mikf/gallery-dl)
+
 ## Step 1: Create a reddit script application
 
 *Instructions are from [@manojkarthick/reddsaver](https://github.com/manojkarthick/reddsaver)*
