@@ -39,15 +39,20 @@ if unsave:
 ddepth = "   "
 
 conn = db.open()
-def have_redditor(r: Redditor) -> bool:
+
+def have_redditor(r: Optional[Redditor]) -> bool:
    try:
-      return bool(
-         conn
-            .execute("select exists(select * from redditors where id = ?)", (r.id,))
-            .fetchone()[0]
-      )
+      # handles r = None
+      # handles r.id missing
+      reddit_id = r.id
    except Exception:
       return True
+
+   return bool(
+      conn
+         .execute("select exists(select * from redditors where id = ?)", (reddit_id,))
+         .fetchone()[0]
+   )
 def add_redditor(r: Redditor):
    conn.execute(
       """
@@ -329,7 +334,9 @@ def archive_comment(c: Union[Comment, MoreComments], depth: str):
 
 archive_redditor(me, ddepth)
 
-for item in cast(Iterator[CommentOrSubmission], me.saved()):
+save_count = 0
+
+for item in cast(Iterator[CommentOrSubmission], me.saved(limit=None)):
    depth = ddepth
    if isinstance(item, Comment):
       print(f"{depth}% c/{item.id}")
@@ -349,5 +356,7 @@ for item in cast(Iterator[CommentOrSubmission], me.saved()):
    else:
       print(f"{ddepth}???/{type(item).__name__}")
    conn.commit()
+   save_count += 1
 
+print(f"Archived {save_count} posts")
 db.close(conn)
