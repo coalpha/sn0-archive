@@ -25,24 +25,41 @@
 
 ## Step 2: Create `_secrets.py`
 
-`_secrets.py` is used by `config.py`. Here's an example:
+`_secrets.py` is used by `_config.py`. Here's an example:
 
 ```py
-client_id = "GJPeNG1ngA3"
-client_secret = "sdfJsdfsd_dsfo_sdflksjf02"
-username = "username"
-password = "password"
+CLIENT_ID = "GJPeNG1ngA3"
+CLIENT_SECRET = "sdfJsdfsd_dsfo_sdflksjf02"
+USERNAME = "username"
+PASSWORD = "password"
 ```
 
-## Step 3: Edit your config.py
+## Step 3: Edit your _config.py
 
-The default `config.py` looks like this:
+The default `_config.py` looks like this:
 
 ```py
 from _secrets import *
-sn0_path = "sn0-archive.sqlite3"
-user_agent = "sn0-archiver"
-media_path = "sn0-media"
+SN0_PATH = "sn0-archive.sqlite3"
+USER_AGENT = "sn0-archiver"
+MEDIA_PATH = "sn0-media"
+GALLERY_DL_COMMAND = "gallery-dl"
+ICON_IMG_THREADS = 8
+SUBMISSION_MEDIA_THREADS = 2
+```
+
+If you're having difficulty getting `gallery-dl` to show up on your path. Find the `site-packages` directory that your python (or python3) is using. Then add that directory to your `$PYTHONPATH`. For example:
+
+```bash
+export PYTHONPATH="$PYTHONPATH:/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages"
+```
+
+Next, change the `GALLERY_DL_COMMAND`
+
+```py
+GALLERY_DL_COMMAND = "python -m gallery_dl"
+# or
+GALLERY_DL_COMMAND = "python3 -m gallery_dl"
 ```
 
 ## Step 4: Provision the database
@@ -71,5 +88,4 @@ python 3_archive_media.py
 
 ## known issues
 
-- doesn't handle MoreComments
 - no way to specify comment limit

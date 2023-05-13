@@ -7,7 +7,7 @@ me_client = praw.Reddit(
    username=_config.USERNAME,
    password=_config.PASSWORD,
    client_id=_config.CLIENT_ID,
-   user_agent=_config.user_agent,
+   user_agent=_config.USER_AGENT,
    client_secret=_config.CLIENT_SECRET,
 )
 assert(me_client.read_only == False)
@@ -84,7 +84,7 @@ def archive_comment_forest(f: CommentForest, ctx: ambient_context):
       else:
          raise RuntimeError(f"SANITY: Unexpected non-comment {type(c).__name__}")
 
-def archive_comment(c: Union[Comment, MoreComments], ctx: ambient_context):
+def archive_comment(c: Comment, ctx: ambient_context):
    # I assume the submission has already been archived
    if db.has_comment(c):
       ctx.print(f"^ c/{c.id}")

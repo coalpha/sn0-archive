@@ -1,10 +1,9 @@
 import os
 import _config
-import asyncio
-from typing import *
-from threadpool import *
+from sup import *
+from bridge import bridge
 
-conn = db.open()
+db = bridge()
 
 async def gallery_dl(outdir: str, url: str, thread_id: int):
    process = await asyncio.create_subprocess_exec(
@@ -24,10 +23,10 @@ async def gallery_dl(outdir: str, url: str, thread_id: int):
 # archive reddit profile pictures
 async def archive_reddit_icon_img():
    pool = threadpool(_config.ICON_IMG_THREADS)
-   data = conn.execute("select id, icon_img from redditors").fetchall()
+   data = db.execute("select id, icon_img from redditors").fetchall()
 
    for (reddit_id, icon_img) in data:
-      outdir = f"{_config.media_path}/redditors/{reddit_id}"
+      outdir = f"{_config.MEDIA_PATH}/redditors/{reddit_id}"
       if os.path.exists(outdir):
          print(f"^ {reddit_id}")
       else:
@@ -36,10 +35,10 @@ async def archive_reddit_icon_img():
 
 async def archive_submission_media():
    pool = threadpool(_config.SUBMISSION_MEDIA_THREADS)
-   data = conn.execute("select id, permalink from submissions").fetchall()
+   data = db.execute("select id, permalink from submissions").fetchall()
 
    for (submission_id, permalink) in data:
-      outdir = f"{_config.media_path}/submissions/{submission_id}"
+      outdir = f"{_config.MEDIA_PATH}/submissions/{submission_id}"
       if os.path.exists(outdir):
          print(f"^ {submission_id}")
       else:
