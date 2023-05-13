@@ -34,15 +34,13 @@ USERNAME = "username"
 PASSWORD = "password"
 ```
 
-The user agent can be anything but reddit gets annoyed if it doesn't follow that format. Replace `/u/your username here` with your username. Alternatively, use `USER_AGENT = "sn0-archiver"`
-
 ## Step 3: Edit your _config.py
 
 The default `_config.py` looks like this:
 
 ```py
 from _secrets import *
-SN0_PATH = "sn0-archive.sqlite3"
+SN0_DB_PATH = "sn0-archive.sqlite3"
 MEDIA_PATH = "sn0-media"
 USER_AGENT = "Python:sn0-archiver:v0.1.0 (by /u/coalfa)"
 GALLERY_DL_COMMAND = "gallery-dl"

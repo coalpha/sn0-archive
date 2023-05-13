@@ -20,7 +20,12 @@ async def gallery_dl(outdir: str, url: str, thread_id: int):
       while True:
          line = await process.stdout.readline()
          if line:
-            print(f"[{thread_id}] : {line.decode().strip()}")
+            try:
+               decoded = line.decode()
+            except Exception:
+               print(f"[{thread_id}]?: {str(line)[:99]}...")
+            else:
+               print(f"[{thread_id}] : {decoded.strip()}")
          else:
             break
 
@@ -28,7 +33,12 @@ async def gallery_dl(outdir: str, url: str, thread_id: int):
       while True:
          line = await process.stderr.readline()
          if line:
-            print(f"[{thread_id}] ! {line.decode().strip()}")
+            try:
+               decoded = line.decode()
+            except Exception:
+               print(f"[{thread_id}]?! {line}")
+            else:
+               print(f"[{thread_id}] ! {decoded.strip()}")
          else:
             break
 
