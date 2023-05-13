@@ -6,6 +6,8 @@
 
 - Minimum Python 3.11.3 (for sqlite)
 - [gallery-dl](https://github.com/mikf/gallery-dl)
+- praw (`pip install praw`)
+- disable 2fa
 
 ## Step 1: Create a reddit script application
 
@@ -66,3 +68,8 @@ python 2_archive_reddits.py and unsave
 ```shell
 python 3_archive_media.py
 ```
+
+## known issues
+
+- doesn't handle MoreComments
+- no way to specify comment limit
