@@ -1,7 +1,29 @@
 import sys
 import _config
-
 from bridge import *
+
+import logging
+
+class sleeping_printer_stream:
+   def __init__(self, stream = sys.stdout):
+      self.stream = stream
+      self.linebuffer = ""
+
+   def write(self, s: str):
+      lines = s.split("\n")
+      for line in lines[:-1]:
+         to_be_printed = self.linebuffer + line + "\n"
+         if to_be_printed.startswith("Sleeping:"):
+            self.stream.write("PRAW " + self.linebuffer + line + "\n")
+         self.linebuffer = ""
+      self.linebuffer = lines[-1]
+
+handler = logging.StreamHandler(sleeping_printer_stream())
+handler.setLevel(logging.DEBUG)
+for logger_name in "prawcore":
+   logger = logging.getLogger(logger_name)
+   logger.setLevel(logging.DEBUG)
+   logger.addHandler(handler)
 
 me_client = praw.Reddit(
    username=_config.USERNAME,
@@ -82,7 +104,7 @@ def archive_comment_forest(f: CommentForest, ctx: ambient_context):
       if isinstance(c, Comment):
          archive_comment(c, ctx)
       else:
-         raise RuntimeError(f"SANITY: Unexpected non-comment {type(c).__name__}")
+         raise TypeError(f"SANITY: Unexpected non-comment {type(c).__name__}")
 
 def archive_comment(c: Comment, ctx: ambient_context):
    # I assume the submission has already been archived
@@ -97,7 +119,7 @@ def archive_comment(c: Comment, ctx: ambient_context):
 archive_redditor(me, ambient_context(""))
 
 save_count = 0
-for saved in cast(Iterator[comment_or_submission], me.saved(limit=None)):
+for saved in cast(Iterator[CommentOrSubmission], me.saved(limit=None)):
    ctx = ambient_context("")
    if isinstance(saved, Comment):
       ctx.print(f"% c/{saved.id}")
@@ -112,7 +134,7 @@ for saved in cast(Iterator[comment_or_submission], me.saved(limit=None)):
          saved.unsave()
          ctx.print(f"- s/{saved.id}")
    else:
-      raise RuntimeError(f"SANITY: Unexpected type {type(saved).__name__}")
+      raise TypeError(f"SANITY: Unexpected type {type(saved).__name__}")
    db.commit()
    save_count += 1
 

@@ -34,6 +34,8 @@ USERNAME = "username"
 PASSWORD = "password"
 ```
 
+The user agent can be anything but reddit gets annoyed if it doesn't follow that format. Replace `/u/your username here` with your username. Alternatively, use `USER_AGENT = "sn0-archiver"`
+
 ## Step 3: Edit your _config.py
 
 The default `_config.py` looks like this:
@@ -41,8 +43,8 @@ The default `_config.py` looks like this:
 ```py
 from _secrets import *
 SN0_PATH = "sn0-archive.sqlite3"
-USER_AGENT = "sn0-archiver"
 MEDIA_PATH = "sn0-media"
+USER_AGENT = "Python:sn0-archiver:v0.1.0 (by /u/coalfa)"
 GALLERY_DL_COMMAND = "gallery-dl"
 ICON_IMG_THREADS = 8
 SUBMISSION_MEDIA_THREADS = 2
@@ -74,7 +76,7 @@ python 1_provision.py
 python 2_archive_reddits.py
 ```
 
-Optionally, unsave posts after archiving. This may be necessary since the reddit API only shows a limited number of posts.
+Optionally, unsave posts after archiving. This may be necessary since the reddit API only shows a limited number of saved posts (1000).
 
 ```shell
 python 2_archive_reddits.py and unsave
@@ -88,4 +90,5 @@ python 3_archive_media.py
 
 ## known issues
 
+- archiving comments takes a while
 - no way to specify comment limit

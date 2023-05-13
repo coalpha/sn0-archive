@@ -10,15 +10,32 @@ async def gallery_dl(outdir: str, url: str, thread_id: int):
       _config.GALLERY_DL_COMMAND,
       "-D", outdir,
       url.replace('"', r'\"'),
-      stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+      stdout=asyncio.subprocess.PIPE,
+      stderr=asyncio.subprocess.PIPE
    )
 
-   stdout, stderr = await process.communicate()
+   print(f"[{thread_id}] $ {_config.GALLERY_DL_COMMAND} {url}")
 
-   for line in stdout.decode().splitlines():
-      print(f"[{thread_id}] {line}")
-   for line in stderr.decode().splitlines():
-      print(f"[{thread_id}] {line}")
+   async def pipe_stdout():
+      while True:
+         line = await process.stdout.readline()
+         if line:
+            print(f"[{thread_id}] : {line.decode().strip()}")
+         else:
+            break
+
+   async def pipe_stderr():
+      while True:
+         line = await process.stderr.readline()
+         if line:
+            print(f"[{thread_id}] ! {line.decode().strip()}")
+         else:
+            break
+
+   await asyncio.gather(pipe_stdout(), pipe_stderr())
+
+   code = await process.wait()
+   print(f"[{thread_id}] = {code}")
 
 # archive reddit profile pictures
 async def archive_reddit_icon_img():

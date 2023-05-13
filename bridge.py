@@ -12,18 +12,19 @@ class bridge(sqlite3.Connection):
       self.execute("pragma optimize")
       super().close()
 
+   def _has_redditor(self, r_id: str) -> bool:
+      return bool(
+         self
+            .execute("select exists(select * from redditors where id = ?)", (r_id,))
+            .fetchone()[0]
+      )
    def has_redditor(self, r: Optional[Redditor]) -> bool:
       try:
          # handles r = None
          # handles r.id missing
-         reddit_id = r.id
+         return self._has_redditor(r.id)
       except Exception:
          return True
-      return bool(
-         self
-            .execute("select exists(select * from redditors where id = ?)", (reddit_id,))
-            .fetchone()[0]
-      )
    def add_redditor(self, r: Redditor):
       if r is None:
          raise RuntimeError("SANITY: Cannot add None as Redditor!")
@@ -44,12 +45,14 @@ class bridge(sqlite3.Connection):
       except Exception as e:
          raise RuntimeError(f"Couldn't add u/{name} ({reddit_id})!") from e
 
-   def has_subreddit(self, s: Subreddit) -> bool:
+   def _has_subreddit(self, s_id: str) -> bool:
       return bool(
          self
-            .execute("select exists(select * from subreddits where id = ?)", (s.id,))
+            .execute("select exists(select * from subreddits where id = ?)", (s_id,))
             .fetchone()[0]
       )
+   def has_subreddit(self, s: Subreddit) -> bool:
+      return self._has_subreddit(s.id)
    def add_subreddit(self, s: Subreddit):
       if s is None:
          raise RuntimeError("SANITY: Cannot add None as Subreddit!")
@@ -95,12 +98,14 @@ class bridge(sqlite3.Connection):
       except Exception as e:
          raise RuntimeError(f"Could not add r/{name} ({subreddit_id})!") from e
 
-   def has_submission(self, s: Submission) -> bool:
+   def _has_submission(self, s_id: str) -> bool:
       return bool(
          self
-            .execute("select exists(select * from submissions where id = ?)", (s.id,))
+            .execute("select exists(select * from submissions where id = ?)", (s_id,))
             .fetchone()[0]
       )
+   def has_submission(self, s: Submission) -> bool:
+      return self._has_submission(s.id)
    def add_submission(self, s: Submission):
       if s is None:
          raise RuntimeError("SANITY: Cannot add None as Submission!")
@@ -198,12 +203,14 @@ class bridge(sqlite3.Connection):
       except Exception as e:
          raise RuntimeError(f"Cannot add submission {submission_id}!") from e
 
-   def has_comment(self, c: Comment) -> bool:
+   def _has_comment(self, c_id: str) -> bool:
       return bool(
          self
-            .execute("select exists(select * from comments where id = ?)", (c.id,))
+            .execute("select exists(select * from comments where id = ?)", (c_id,))
             .fetchone()[0]
       )
+   def has_comment(self, c: Comment) -> bool:
+      return self._has_comment(c.id)
    def add_comment(self, c: Comment):
       if c is None:
          raise RuntimeError("SANITY: Cannot add None as Comment!")
@@ -212,8 +219,15 @@ class bridge(sqlite3.Connection):
       except Exception as e:
          raise RuntimeError("Cannot get Comment#id!") from e
       try:
-         parent_comment = c.parent()
-         parent_id = parent_comment.id
+         parent: CommentOrSubmission = c.parent()
+         if isinstance(parent, Comment):
+            parent_id = parent.id
+         elif isinstance(parent, Submission):
+            parent_id = None
+         else:
+            raise TypeError(f"SANITY: Comment parent must be either Comment or Submission but instead found {type(parent).__name__}")
+      except TypeError as e:
+         raise e
       except Exception:
          parent_id = None
       try:
@@ -271,6 +285,17 @@ class bridge(sqlite3.Connection):
                c.stickied,
                c.submission.id
             ]
+         )
+      except sqlite3.IntegrityError as e:
+         fk_author = self._has_redditor(author_id)
+         fk_parent_comment = self._has_comment(parent_id)
+         fk_submission = self._has_submission(c.submission.id)
+         def ok(b: bool) -> str:
+            return "OK" if b else "MISSING"
+         raise RuntimeError(""
+            + f"author <- {author_id} {ok(fk_author)}, "
+            + f"parent_comment <- {parent_id} {ok(fk_parent_comment)}, "
+            + f"submission <- {c.submission.id} {ok(fk_submission)}"
          )
       except Exception as e:
          raise RuntimeError(f"Cannot add comment {comment_id}!") from e

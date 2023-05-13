@@ -5,7 +5,7 @@ from typing import *
 from praw.models import Comment, Redditor, Subreddit, Submission, MoreComments
 from praw.models.comment_forest import CommentForest
 
-comment_or_submission = Union[Comment, Submission]
+CommentOrSubmission = Union[Comment, Submission]
 
 class threadpool:
    def __init__(self, count: int):
