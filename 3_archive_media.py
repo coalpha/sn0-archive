@@ -1,6 +1,5 @@
-import db
 import os
-import config
+import _config
 import asyncio
 from typing import *
 from threadpool import *
@@ -9,7 +8,7 @@ conn = db.open()
 
 async def gallery_dl(outdir: str, url: str, thread_id: int):
    process = await asyncio.create_subprocess_exec(
-      config.gallery_dl_command,
+      _config.gallery_dl_command,
       "-D", outdir,
       url.replace('"', r'\"'),
       stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
@@ -22,27 +21,34 @@ async def gallery_dl(outdir: str, url: str, thread_id: int):
    for line in stderr.decode().splitlines():
       print(f"[{thread_id}] {line}")
 
-   return thread_id
-
 # archive reddit profile pictures
-ICON_IMG_THREADS = 3
 async def archive_reddit_icon_img():
-   pool = threadpool(ICON_IMG_THREADS)
+   pool = threadpool(_config.ICON_IMG_THREADS)
    data = conn.execute("select id, icon_img from redditors").fetchall()
 
    for (reddit_id, icon_img) in data:
-      outdir = f"{config.media_path}/redditors/{reddit_id}"
+      outdir = f"{_config.media_path}/redditors/{reddit_id}"
       if os.path.exists(outdir):
          print(f"^ {reddit_id}")
       else:
-         pool.enqueue(gallery_dl(outdir, icon_img, i))
+         thread_id = await pool.next()
+         pool.enqueue_at(thread_id, gallery_dl(outdir, icon_img, thread_id))
 
-asyncio.run(archive_reddit_icon_img())
+async def archive_submission_media():
+   pool = threadpool(_config.SUBMISSION_MEDIA_THREADS)
+   data = conn.execute("select id, permalink from submissions").fetchall()
 
-# archive posts
-for (submission_id, permalink) in conn.execute("select id, permalink from submissions").fetchall():
-   d = f"{config.media_path}/submissions/{submission_id}"
-   if os.path.exists(d):
-      print(f"^ {submission_id}")
-   else:
-      os.system(f'gallery-dl -D {d} "https://reddit.com{escape(permalink)}"')
+   for (submission_id, permalink) in data:
+      outdir = f"{_config.media_path}/submissions/{submission_id}"
+      if os.path.exists(outdir):
+         print(f"^ {submission_id}")
+      else:
+         reddit_link = f"https://reddit.com{permalink}"
+         thread_id = await pool.next()
+         pool.enqueue_at(thread_id, gallery_dl(outdir, reddit_link, thread_id))
+
+async def main():
+   await archive_reddit_icon_img()
+   await archive_submission_media()
+
+asyncio.run(main())

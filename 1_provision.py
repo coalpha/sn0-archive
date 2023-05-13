@@ -1,8 +1,8 @@
-import db
 import os.path
+import _config
 
 def make_old_db(v: int) -> str:
-   return f"{db.sn0_path}.{v}.old"
+   return f"{_config.SN0_DB_PATH}.{v}.old"
 
 max_old_dbs = 4
 def rename_version_if_exists(v: int = 1):
@@ -14,12 +14,14 @@ def rename_version_if_exists(v: int = 1):
          rename_version_if_exists(v + 1)
          os.rename(maybe_old_db, make_old_db(v + 1))
 
-if os.path.isfile(db.sn0_path):
+if os.path.isfile(_config.SN0_DB_PATH):
    rename_version_if_exists(1)
-   os.rename(db.sn0_path, make_old_db(1))
+   os.rename(_config.SN0_DB_PATH, make_old_db(1))
 
 schema = open("schema.sql")
-conn = db.open()
+
+from bridge import bridge
+conn = bridge()
 conn.executescript(schema.read())
-db.close(conn)
+bridge.close()
 schema.close()
