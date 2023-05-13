@@ -109,9 +109,9 @@ def have_submission(s: Submission) -> bool:
    )
 def add_submission(s: Submission):
    is_gallery = False
-   if s.author is not None and hasattr(s.author, "id"):
+   try:
       author_id = s.author.id
-   else:
+   except Exception:
       author_id = None
    try:
       if s.is_gallery:

@@ -4,7 +4,7 @@
 
 ## requirements
 
-- Python 3.11.3 (for sqlite)
+- Minimum Python 3.11.3 (for sqlite)
 - [gallery-dl](https://github.com/mikf/gallery-dl)
 
 ## Step 1: Create a reddit script application
