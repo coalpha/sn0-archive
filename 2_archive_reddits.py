@@ -1,4 +1,5 @@
 import db
+import sys
 import praw
 import config
 
@@ -22,8 +23,19 @@ me_client = praw.Reddit(
 )
 assert(me_client.read_only == False)
 
+if len(sys.argv) == 3 and sys.argv[1] == "and" and sys.argv[2] == "unsave":
+   unsave = True
+else:
+   unsave = False
+
 me = cast(Redditor, me_client.user.me())
 print(f"sn0-archive: u/{me.name}")
+if unsave:
+   if input("Running in UNSAVE mode. Are you sure? [y/N]\n> ") != "y":
+      print("Quitting...")
+      exit(1)
+   else:
+      print("UNSAVING after archiving!")
 ddepth = "   "
 
 conn = db.open()
@@ -97,6 +109,10 @@ def have_submission(s: Submission) -> bool:
    )
 def add_submission(s: Submission):
    is_gallery = False
+   if s.author is not None and hasattr(s.author, "id"):
+      author_id = s.author.id
+   else:
+      author_id = None
    try:
       if s.is_gallery:
          is_gallery = True
@@ -156,7 +172,7 @@ def add_submission(s: Submission):
       """,
       [
          s.id,
-         s.author.id if s.author else None,
+         author_id,
          s.author_flair_text,
          s.created_utc,
          bool(s.distinguished),
@@ -317,16 +333,21 @@ for item in cast(Iterator[CommentOrSubmission], me.saved()):
    depth = ddepth
    if isinstance(item, Comment):
       print(f"{depth}% c/{item.id}")
-      depth += ddepth
-      archive_submission(item.submission, depth)
+      archive_submission(item.submission, depth + ddepth)
+      # sometimes archiving the entire submission won't get the comment
+      # because of the MoreComments thing
+      archive_comment(item)
+      if unsave:
+         item.unsave()
+         print(f"{depth}- c/{item.id}")
    elif isinstance(item, Submission):
       print(f"{depth}% s/{item.id}")
-      depth += ddepth
-      archive_submission(item, depth)
+      archive_submission(item, depth + ddepth)
+      if unsave:
+         item.unsave()
+         print(f"{depth}- s/{item.id}")
    else:
       print(f"{ddepth}???/{type(item).__name__}")
    conn.commit()
-   if config.unsave:
-      item.unsave()
 
 db.close(conn)

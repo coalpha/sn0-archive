@@ -1,5 +1,6 @@
 __pycache__/
 *.db
-*.sqlite3
+*.sqlite3*
 *.old
 /_secrets.py
+/sn0-media/
