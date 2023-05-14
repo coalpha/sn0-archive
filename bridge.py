@@ -1,7 +1,11 @@
 import _config
 import sqlite3
-
 from sup import *
+
+# verify that strict tables work. minimum sqlite3 version is v3.37.0
+
+if float(sqlite3.sqlite_version[2:]) < 37.0:
+   raise RuntimeError(f"Minimum sqlite3 version must be v3.37.0! Please install a newer version of Python!")
 
 class bridge(sqlite3.Connection):
    def __init__(self):

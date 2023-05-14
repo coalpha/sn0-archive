@@ -1,10 +1,12 @@
 # sn0-archive
 
+<img src="./misc/icon.png" max-width="10%"/>
+
 *Reddit archiving scripts*
 
 ## requirements
 
-- Minimum Python 3.11.3 (for sqlite)
+- A recent Python version for sqlite v3.37.0. I have python 3.11.3 and it works just fine.
 - [gallery-dl](https://github.com/mikf/gallery-dl)
 - praw (`pip install praw`)
 - disable 2fa
