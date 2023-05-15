@@ -52,6 +52,10 @@ async def gallery_dl(outdir: str, url: str, thread_id: int):
    try:
       os.rename(f"{outdir}.tmp", outdir)
    except Exception as e:
+      try:
+         open(outdir, "a").close()
+      except Exception:
+         ...
       for line in str(e).splitlines():
          print(f"[{thread_id}] ! {line}")
 
