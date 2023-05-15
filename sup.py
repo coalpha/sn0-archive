@@ -42,6 +42,13 @@ class Threadpool:
    def enqueue_at(self, id: int, co: Coroutine):
       self.pool[id] = asyncio.create_task(co)
 
+   async def close(self):
+      remaining_tasks = [task for task in self.pool if task is not None and not task.done()]
+      if remaining_tasks:
+         await asyncio.wait(remaining_tasks, return_when="ALL_COMPLETED")
+      for i in range(0, self.count):
+         self.pool[i] = None
+
 class SleepingPrinterStream:
    def __init__(self, stream = sys.stdout):
       self.stream = stream

@@ -8,16 +8,18 @@ redditor_data = db.execute("select id, icon_img, name from redditors").fetchall(
 submission_data = db.execute("select id, permalink from submissions").fetchall()
 db.close()
 
+def escape_str(s: str) -> str:
+   return s.replace('"', r'\"')
+
 async def gallery_dl(outdir: str, url: str, thread_id: int):
-   process = await asyncio.create_subprocess_exec(
-      _config.GALLERY_DL_COMMAND,
-      "-D", f"{outdir}.tmp",
-      url.replace('"', r'\"'),
+   command = f"{_config.GALLERY_DL_COMMAND} -D {outdir}.tmp {escape_str(url)}"
+   print(f"[{thread_id}] $ {command}")
+
+   process = await asyncio.create_subprocess_shell(
+      command,
       stdout=asyncio.subprocess.PIPE,
       stderr=asyncio.subprocess.PIPE
    )
-
-   print(f"[{thread_id}] $ {_config.GALLERY_DL_COMMAND} {url[:80]}...")
 
    async def pipe_stdout():
       while True:
@@ -67,12 +69,14 @@ async def archive_submission_media():
 
    for (submission_id, permalink) in submission_data:
       if submission_id in submissions_dir:
-         print(f"[*] ^ {submission_id}")
+         print(f"[*] ^ s/{submission_id}")
       else:
          outdir = f"{_config.MEDIA_PATH}/submissions/{submission_id}"
          reddit_link = f"https://reddit.com{permalink}"
          thread_id = await pool.next()
          pool.enqueue_at(thread_id, gallery_dl(outdir, reddit_link, thread_id))
+
+   await pool.close()
 
 redditors_dir = set(os.listdir(f"{_config.MEDIA_PATH}/redditors"))
 async def archive_reddit_icon_img():
@@ -86,10 +90,12 @@ async def archive_reddit_icon_img():
          thread_id = await pool.next()
          pool.enqueue_at(thread_id, gallery_dl(outdir, icon_img, thread_id + _config.SUBMISSION_MEDIA_THREADS))
 
+   await pool.close()
+
 async def main():
    submissions = archive_submission_media()
    icons = archive_reddit_icon_img()
    await asyncio.gather(submissions, icons)
 
-asyncio.run(main())
+asyncio.run(archive_submission_media())
 print("Finished!")
