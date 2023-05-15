@@ -2,8 +2,6 @@ import sys
 import _config
 from bridge import *
 
-import logging
-
 class sleeping_printer_stream:
    def __init__(self, stream = sys.stdout):
       self.stream = stream
@@ -14,16 +12,16 @@ class sleeping_printer_stream:
       for line in lines[:-1]:
          to_be_printed = self.linebuffer + line + "\n"
          if to_be_printed.startswith("Sleeping:"):
-            self.stream.write("PRAW " + to_be_printed + "\n")
+            self.stream.write("PRAW " + to_be_printed)
          self.linebuffer = ""
       self.linebuffer = lines[-1]
 
-handler = logging.StreamHandler()
+import logging
+handler = logging.StreamHandler(sleeping_printer_stream())
 handler.setLevel(logging.DEBUG)
-for logger_name in "prawcore":
-   logger = logging.getLogger(logger_name)
-   logger.setLevel(logging.DEBUG)
-   logger.addHandler(handler)
+logger = logging.getLogger("prawcore")
+logger.setLevel(logging.DEBUG)
+logger.addHandler(handler)
 
 reddit = praw.Reddit(
    username=_config.USERNAME,
@@ -102,7 +100,7 @@ def fetch_comment_forest(f: CommentForest, ctx: ambient_context) -> list[Comment
 
    if _config.MORECOMMENTS_LIMIT is None:
       request_limit = float("inf")
-      should_print_request = False
+      should_print_request = True
    else:
       request_limit = _config.MORECOMMENTS_LIMIT
       should_print_request = True
