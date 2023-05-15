@@ -86,7 +86,7 @@ python 1_provision.py
 python 2_archive_reddits.py
 ```
 
-Optionally, unsave posts after archiving. This may be necessary since the reddit API only shows a limited number of saved posts (1000).
+Optionally, unsave posts after archiving. This may be necessary since the reddit API only shows a limited number of saved posts (1000). You can exit this using `ctrl+c` without losing progress on previously saved 
 
 ```shell
 python 2_archive_reddits.py and unsave
@@ -96,6 +96,12 @@ If you mistakenly unsaved things, you can run `resave.py` to resave all comments
 
 ## Step 6: Archive media
 
+I recommend running this periodically while `2_archive_reddits.py` is running.
+
 ```shell
 python 3_archive_media.py
 ```
+
+## known issues
+
+- `3_archive_media.py` randomly stops sometimes and needs to be restarted.

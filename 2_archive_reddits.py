@@ -1,23 +1,8 @@
-import sys
 import _config
+import logging
 from bridge import *
 
-class sleeping_printer_stream:
-   def __init__(self, stream = sys.stdout):
-      self.stream = stream
-      self.linebuffer = ""
-
-   def write(self, s: str):
-      lines = s.split("\n")
-      for line in lines[:-1]:
-         to_be_printed = self.linebuffer + line + "\n"
-         if to_be_printed.startswith("Sleeping:"):
-            self.stream.write("PRAW " + to_be_printed)
-         self.linebuffer = ""
-      self.linebuffer = lines[-1]
-
-import logging
-handler = logging.StreamHandler(sleeping_printer_stream())
+handler = logging.StreamHandler(SleepingPrinterStream())
 handler.setLevel(logging.DEBUG)
 logger = logging.getLogger("prawcore")
 logger.setLevel(logging.DEBUG)
@@ -202,7 +187,9 @@ def archive_single_comment(c: Comment, ctx: ambient_context):
 archive_redditor(me, ambient_context(""))
 
 save_count = 0
-for saved in cast(Iterator[CommentOrSubmission], me.saved(limit=None)):
+saved_posts: list[CommentOrSubmission] = [*me.saved(limit=1000)]
+print(f"Fetched {len(saved_posts)} saved posts")
+for saved in saved_posts:
    ctx = ambient_context("")
    if isinstance(saved, Comment):
       ctx.print(f"% c/{saved.id}")
