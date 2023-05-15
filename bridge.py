@@ -48,6 +48,16 @@ class bridge(sqlite3.Connection):
          )
       except Exception as e:
          raise RuntimeError(f"Couldn't add u/{name} ({reddit_id})!") from e
+   def add_partial_redditors(self, prs: list[PartialRedditor]):
+      records = [(pr.fullname[3:], pr.name, pr.created_utc, pr.profile_img) for pr in prs]
+      self.executemany(
+         """
+         insert into
+            redditors (id, name, created_utc, icon_img)
+            values (?, ?, ?, ?)
+         """,
+         records
+      )
 
    def _has_subreddit(self, s_id: str) -> bool:
       return bool(
@@ -222,20 +232,12 @@ class bridge(sqlite3.Connection):
          comment_id = c.id
       except Exception as e:
          raise RuntimeError("Cannot get Comment#id!") from e
+      if c.parent_id.startswith("t1_"):
+         parent_comment_id = c.parent_id[3:]
+      else:
+         parent_comment_id = None
       try:
-         parent: CommentOrSubmission = c.parent()
-         if isinstance(parent, Comment):
-            parent_id = parent.id
-         elif isinstance(parent, Submission):
-            parent_id = None
-         else:
-            raise TypeError(f"SANITY: Comment parent must be either Comment or Submission but instead found {type(parent).__name__}")
-      except TypeError as e:
-         raise e
-      except Exception:
-         parent_id = None
-      try:
-         author_id = c.author.id
+         author_id = c.author_fullname[3:]
       except Exception:
          author_id = None
       try:
@@ -282,7 +284,7 @@ class bridge(sqlite3.Connection):
                bool(c.distinguished),
                c.edited,
                c.is_submitter,
-               parent_id,
+               parent_comment_id,
                c.permalink,
                c.saved,
                c.score,
@@ -292,13 +294,13 @@ class bridge(sqlite3.Connection):
          )
       except sqlite3.IntegrityError as e:
          fk_author = self._has_redditor(author_id)
-         fk_parent_comment = self._has_comment(parent_id)
+         fk_parent_comment = self._has_comment(parent_comment_id)
          fk_submission = self._has_submission(c.submission.id)
          def ok(b: bool) -> str:
             return "OK" if b else "MISSING"
          raise RuntimeError(""
             + f"author <- {author_id} {ok(fk_author)}, "
-            + f"parent_comment <- {parent_id} {ok(fk_parent_comment)}, "
+            + f"parent_comment <- {parent_comment_id} {ok(fk_parent_comment)}, "
             + f"submission <- {c.submission.id} {ok(fk_submission)}"
          )
       except Exception as e:

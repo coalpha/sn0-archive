@@ -3,9 +3,11 @@ import asyncio
 
 from typing import *
 from praw.models import Comment, Redditor, Subreddit, Submission, MoreComments
+from praw.models.redditors import PartialRedditor
 from praw.models.comment_forest import CommentForest
 
 CommentOrSubmission = Union[Comment, Submission]
+Commenty = Union[Comment, MoreComments]
 
 class threadpool:
    def __init__(self, count: int):

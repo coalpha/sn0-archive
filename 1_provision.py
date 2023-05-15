@@ -23,5 +23,5 @@ schema = open("schema.sql")
 from bridge import bridge
 conn = bridge()
 conn.executescript(schema.read())
-bridge.close()
+conn.close()
 schema.close()

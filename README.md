@@ -1,4 +1,4 @@
-# sn0-archive
+# sn0-archive v1.0.0
 
 <img src="./misc/icon.png" max-width="10%"/>
 
@@ -44,11 +44,21 @@ The default `_config.py` looks like this:
 from _secrets import *
 SN0_DB_PATH = "sn0-archive.sqlite3"
 MEDIA_PATH = "sn0-media"
-USER_AGENT = "Python:sn0-archiver:v0.1.0 (by /u/coalfa)"
+USER_AGENT = "Python:sn0-archiver:v1.0.0 (by /u/coalfa)"
 GALLERY_DL_COMMAND = "gallery-dl"
 ICON_IMG_THREADS = 8
 SUBMISSION_MEDIA_THREADS = 2
+# number of MoreComments to unpack. to archive all comments, set to None
+MORECOMMENTS_LIMIT = 32
+# number of comments per post to archive, set to None for no limit
+COMMENT_LIMIT = None
 ```
+
+### Comment truncation
+
+With `MORECOMMENTS_LIMIT` and `COMMENT_LIMIT` set to `None`, sn0-archiver will archive all comments. This, however, is quite time consuming and I don't recommend it.
+
+### gallery-dl issues
 
 If you're having difficulty getting `gallery-dl` to show up on your path. Find the `site-packages` directory that your python (or python3) is using. Then add that directory to your `$PYTHONPATH`. For example:
 
@@ -82,13 +92,10 @@ Optionally, unsave posts after archiving. This may be necessary since the reddit
 python 2_archive_reddits.py and unsave
 ```
 
+If you mistakenly unsaved things, you can run `resave.py` to resave all comments and submissions. It won't be in the order you saved them in though.
+
 ## Step 6: Archive media
 
 ```shell
 python 3_archive_media.py
 ```
-
-## known issues
-
-- archiving comments takes a while
-- no way to specify comment limit
